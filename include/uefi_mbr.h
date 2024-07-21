@@ -5,13 +5,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// global and consts.
 #include <config.h>
 #include <uefi_lba.h>
 
-// -------------------------------------
+// ----------------
 // Global Typedefs
-// -------------------------------------
+// ----------------
 
 /**
  * @brief Структура для хранения данных раздела MBR.

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
-// global and consts.
+
 #include <config.h>
 
 // ==========
@@ -49,7 +49,7 @@ void writeFullLBASize(FILE *image);
  */
 inline uint64_t nextAlignedLBA(const uint64_t LBA)
 {
-    return ((LBA + alignLBA - 1) / alignLBA) * alignLBA;
+    return LBA - (LBA % alignLBA) + alignLBA;
 }
 
 #endif

@@ -18,7 +18,6 @@ bool writeMBR(FILE *image)
             .EndingCHS = {0xFF, 0xFF, 0xFF},
             .StartingLBA = 0x00000001,
             .SizeInLBA = mbrSizeLBAs - 1,
-
         },
         .Signature = 0xAA55,
 

@@ -31,7 +31,7 @@ secondary is at end of disk before the secondary GPT header (LBA -2 to LBA -33).
 
 [x] CRC32 table generation and CRC32 values
 
-[ ] EFI System Partition (ESP), with a FAT32 file system, for folders '/EFI/BOOT/', or root -> EFI -> BOOT. 
+[x] EFI System Partition (ESP), with a FAT32 file system, for folders '/EFI/BOOT/', or root -> EFI -> BOOT. 
 Use microsoft documentation .doc file from 2000 ("retro"!).
 
 Misc Notes:
@@ -71,3 +71,30 @@ Misc Notes:
     // For 1024 byte sector/LBA
     FAT_size_in_lbas = ((1048576 / 1024) - 32) / 2 = 496;
     minimum_disk_size_MiB = ((65536 + (1048576 / 1024)) * 1024) / 1048576
+
+    // For 2048 byte sector/LBA
+    FAT_size_in_lbas = ((1048576 / 2048) - 32) / 2 = 240;
+    minimum_disk_size_MiB = ((65536 + (1048576 / 2048)) 2048) / 1048576 = 129; // 129MiB
+
+    // For 4096 byte sector/LBA
+    FAT_size_in_lbas = ((1048576 / 4096) 32)/2 = 112;
+    minimum_disk_size_MiB = ((65536 + (1048576 / 4096)) * 4096) / 1048576 = 257; // 257MiB
+
+    [ ] Function: Auto add file to ESP: e.g. add BOOTX64. EFI file to ESP under '/EFI/BOOT/BOOTX64.EFI' if found in project folder. 
+
+    [ ] Make more "generic" function taking 2 arguments (strings): first for file path, to grab the last directory in path; 
+       2nd for file name, to add to that path. while this could be sent as 1 full path, it may be easier to have input from
+       a command line flag be 2 separate args to allow shell autocomplete or other niceties, and this function can reflect that. 
+       Or can use 1 arg for "/ESP/PATH/TO/FILE.EXT" and "FILE. EXT" would have to be found in the current folder e.g. "./file.ext", 
+       but this would not have tab autocomplete or anything.
+
+    [ ] Basic Data partition or other blank/empty partition type.
+       This should be "done" already, as it's empty/ all Os already from fseek()-ing and writing the secondary GPT table and header at the end of the disk image.
+
+    [ ] Create a file, "dskimg.inf" or some other name, inside of "/EFI/BOOT/" directory.
+       It can be an ascii or utf-8 text file with simple <key>=<value> pairs separated by newlines.
+       The first (only?) needed info would be the size of the disk image, to know how much to write to a
+       chosen disk/drive for installing later from an EFI OS Loader application.
+       Something like "DISK_SIZE=268435456\n" for 256MiB.
+
+       [ ] Use same function/process as adding BOOTX64. EFI file to fopen()/fwrite()/fclose() for disk_image.info file

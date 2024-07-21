@@ -12,7 +12,8 @@ void getFATDirEntTimeDate(uint16_t *inTime, uint16_t *inDate)
 
     // Seconds is # 2-second count, 0-29
     if (tm.tm_sec == 60) tm.tm_sec = 59;
-    *inTime = tm.tm_hour << 11 | tm.tm_min << 5 | (tm.tm_sec / 2);}
+    *inTime = tm.tm_hour << 11 | tm.tm_min << 5 | (tm.tm_sec / 2);
+}
 
 bool writeESP(FILE *image)
 {
