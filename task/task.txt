@@ -1,0 +1,73 @@
+=====================================================
+1. GPT Disk Image Creator
+=====================================================
+
+*  С program to create GPT disk images including: Protective MBR, Primary & Seconday GPT header(s), Primary & Secondary GPT Partition entry array(s), 
+    EFI System Partition (ESP), Basic Data/other partition, and variaous command line flags.
+    The ESP will have a FAT32 file system for '/EFI/BOOT/BOOTX64.EFI' file/folder structure at minimum.
+
+*  This program ensures windows and linux can have the same build process and output the same disk images, without needing mtools/mkdosfs or
+    other tools not natively available on both. It's also for learning and to go along with the UEFI specifications :A)
+
+*  Will use 'sgdisk' to verify GPT disk images, https://www.rodsbooks.com/gdisk/
+    sgdisk -Op fp PRRURO RCs e aI
+    -O to print MBR partition table/info
+    -P to print GPT partition table/info
+
+-- Main Logic/Data --
+
+[x] Makefile to build, ‘write_gpt' target, ‘'write_gpt.c' source file. ‘build.sh' & ‘build.bat’ can still be used as alternatives.
+
+[x] Write LBA 0 protective MBR, OXxEE OS type
+    [x] Default disk size: using a minimum of 33MiB (32MiB ESP & 1MiB Data partitions) + padding for MBR/GPTs.
+
+[x] GPT headers, primary and secondary, at different sector/LBA values depending on how large the disk is (command line flag or default size).
+   Primary header is after protective MBR, at LBA 1, secondary header is at end of disk (LBA -1).
+
+[x] GPT partition entry arrays, primary and secondary, for ESP and data partitions. Primary array is usually at LBA 2-33,
+secondary is at end of disk before the secondary GPT header (LBA -2 to LBA -33).
+
+[x] UUID/GUID version 4 pseudo-random generated, variant 2
+
+[x] CRC32 table generation and CRC32 values
+
+[ ] EFI System Partition (ESP), with a FAT32 file system, for folders '/EFI/BOOT/', or root -> EFI -> BOOT. 
+Use microsoft documentation .doc file from 2000 ("retro"!).
+
+Misc Notes:
+
+    Q: Why is 65525 the minimum # of clusters for FAT32?
+
+    A: Clusters O and 1 are reserved; They are used for FAT signature and EOC mark.
+    Data_clusters thus start at 2. The final 8 cluster numbers (e.g. OxFFF8-OxFFFF for FAT16) are reserved for special meanings.
+    The 7th cluster (OxOFF7, OxFFF7, or OxOFFFFFF7) is used for a "bad cluster" marker.
+    So for FAT16, the max amount of total data clusters has to be OxFFF6 to be under the special meanings, and -2 for clusters
+    0 & 1. That's OxFFF6-2 = OxFFF4, or 65524. Using the cluster count as the identifier, it follows that
+    FAT12 has OxOFF4/4084 max clusters, FAT16 has OxOFF5/4085 minimum clusters and OxFFF4/65524 max clusters, and FAT32 has
+    to start at OxFFF5/65525 as the minimum number of clusters, otherwise 0x10000/65536 would be the first actual 32 bit cluster number.
+
+    The minimum disk size to use for FAT32 needs 65525+ sectors, and UEFI recommends (1MiB or other) alignment of the data region.
+    FAT32 docs state reserved sector count should be 32, and # of fats is 2. I'll use 1 sector per cluster for simplicity,
+    but it could be a higher power of 2 such as 4 or 8 sectors/cluster.
+
+    For 512 byte sectors/LBAs, to euhigo data region (first data cluster) on a 1MiB boundary,
+    FAT Table size in sectors should be 1008 (32 reserved + 2*1008 = 2048. 2048 * 512 = 1048576 bytes for 1miB).
+
+    I'm going to use 65536 as the minimum cluster count instead of 65525 to have some extra padding and use a nice
+    power of 2. Data clusters = sectors for 1 sector/cluster, and 65536 + 2048 is the minimum needed (2048 for reserved
+    sectors and FAT table sectors). 65536 + 2048 = 67584. 67584 * 512 = 34603008 bytes. 34603008/1048576 = 33MiB.
+
+    So I can use either 33MiB as the minimum disk size required for the ESP, or use 40MiB or some other number divisible
+    by 8 or a power of 2, to be nicer aesthetically.
+
+    In more general terms, this is:
+    FAT_size_in_lbas = ((1MiB / lba_size) - 32) / 2; // Assuming there are 2 FATs, dividing by 2 for size per FAT.
+    minimum_disk_size_MiB = ((65536 + (1MiB / lba_size)) * lba_size) / 1MiB;
+
+    // For 512 byte sector/LBA
+    FAT_size_in_Ibas = ((1048576 / 512) - 32) / 2 = 1008;
+    minimum_disk_size_MiB = ((65536 + (1048576 / 512)) * 512) / 1048576 = 33; // 33MiB e
+
+    // For 1024 byte sector/LBA
+    FAT_size_in_lbas = ((1048576 / 1024) - 32) / 2 = 496;
+    minimum_disk_size_MiB = ((65536 + (1048576 / 1024)) * 1024) / 1048576
